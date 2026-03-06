@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "hum8-app",
+  "productName": "Demo App",
   "version": "0.1.0",
-  "identifier": "com.humancorp.hum8-app",
+  "identifier": "com.humancorp.demo-app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "HUM-8 App",
+        "title": "Demo App",
         "width": 800,
         "height": 600,
         "resizable": true,
