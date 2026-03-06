@@ -1,11 +1,55 @@
-import { useState, useRef, useEffect, type KeyboardEvent } from "react"
-import { Check, Plus, Trash2, GripVertical } from "lucide-react"
+import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react"
+import { Check, Plus, Trash2, GripVertical, Sun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface Todo {
+export interface Todo {
   id: string
   text: string
   completed: boolean
+}
+
+const STORAGE_KEY = "notion-todos"
+
+function loadTodos(): Todo[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored) as unknown
+      if (Array.isArray(parsed) && parsed.every(
+        (t): t is Todo =>
+          typeof t === "object" && t !== null &&
+          typeof t.id === "string" &&
+          typeof t.text === "string" &&
+          typeof t.completed === "boolean"
+      )) {
+        return parsed
+      }
+    }
+  } catch {
+    // ignore corrupt data
+  }
+  return [
+    { id: "1", text: "Welcome to your todo list", completed: false },
+    { id: "2", text: "Click to edit a todo", completed: false },
+    { id: "3", text: "Click the checkbox to complete", completed: true },
+  ]
+}
+
+function saveTodos(todos: Todo[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
+}
+
+const THEME_KEY = "notion-todo-theme"
+
+function loadDarkMode(): boolean {
+  try {
+    const stored = localStorage.getItem(THEME_KEY)
+    if (stored === "dark") return true
+    if (stored === "light") return false
+  } catch {
+    // ignore
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
 }
 
 function TodoItem({
@@ -102,15 +146,21 @@ function TodoItem({
 }
 
 export default function TodoApp() {
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: "1", text: "Welcome to your todo list", completed: false },
-    { id: "2", text: "Click to edit a todo", completed: false },
-    { id: "3", text: "Click the checkbox to complete", completed: true },
-  ])
+  const [todos, setTodos] = useState<Todo[]>(loadTodos)
   const [newTodoText, setNewTodoText] = useState("")
+  const [dark, setDark] = useState(loadDarkMode)
   const newTodoRef = useRef<HTMLInputElement>(null)
 
-  const addTodo = () => {
+  useEffect(() => {
+    saveTodos(todos)
+  }, [todos])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark)
+    localStorage.setItem(THEME_KEY, dark ? "dark" : "light")
+  }, [dark])
+
+  const addTodo = useCallback(() => {
     const trimmed = newTodoText.trim()
     if (!trimmed) return
     setTodos((prev) => [
@@ -119,23 +169,23 @@ export default function TodoApp() {
     ])
     setNewTodoText("")
     newTodoRef.current?.focus()
-  }
+  }, [newTodoText])
 
-  const toggleTodo = (id: string) => {
+  const toggleTodo = useCallback((id: string) => {
     setTodos((prev) =>
       prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     )
-  }
+  }, [])
 
-  const deleteTodo = (id: string) => {
+  const deleteTodo = useCallback((id: string) => {
     setTodos((prev) => prev.filter((t) => t.id !== id))
-  }
+  }, [])
 
-  const updateTodo = (id: string, text: string) => {
+  const updateTodo = useCallback((id: string, text: string) => {
     setTodos((prev) =>
       prev.map((t) => (t.id === id ? { ...t, text } : t))
     )
-  }
+  }, [])
 
   const handleNewTodoKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -145,7 +195,16 @@ export default function TodoApp() {
 
   return (
     <div className="max-w-xl mx-auto px-6 py-16">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Todo</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Todo</h1>
+        <button
+          onClick={() => setDark((d) => !d)}
+          className="p-2 rounded-md transition-colors hover:bg-muted"
+          aria-label="Toggle dark mode"
+        >
+          {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
+      </div>
 
       <div className="space-y-0.5">
         {todos.map((todo) => (
