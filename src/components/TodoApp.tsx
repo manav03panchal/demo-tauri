@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo, memo, type KeyboardEvent } from "react"
 import { Check, Plus, Trash2, GripVertical, Sun, Moon, Filter } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -71,7 +71,7 @@ function loadDarkMode(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
 }
 
-function SortableTodoItem({
+const SortableTodoItem = memo(function SortableTodoItem({
   todo,
   onToggle,
   onDelete,
@@ -183,9 +183,9 @@ function SortableTodoItem({
       </button>
     </div>
   )
-}
+})
 
-function ProgressBar({ completed, total }: { completed: number; total: number }) {
+const ProgressBar = memo(function ProgressBar({ completed, total }: { completed: number; total: number }) {
   const pct = total === 0 ? 0 : Math.round((completed / total) * 100)
   return (
     <div className="mb-6">
@@ -205,9 +205,9 @@ function ProgressBar({ completed, total }: { completed: number; total: number })
       </div>
     </div>
   )
-}
+})
 
-function FilterTabs({
+const FilterTabs = memo(function FilterTabs({
   filter,
   onFilterChange,
 }: {
@@ -239,7 +239,7 @@ function FilterTabs({
       ))}
     </div>
   )
-}
+})
 
 export default function TodoApp() {
   const [todos, setTodos] = useState<Todo[]>(loadTodos)
@@ -326,14 +326,14 @@ export default function TodoApp() {
     }
   }
 
-  const completedCount = todos.filter((t) => t.completed).length
+  const completedCount = useMemo(() => todos.filter((t) => t.completed).length, [todos])
   const activeCount = todos.length - completedCount
 
-  const filteredTodos = todos.filter((t) => {
+  const filteredTodos = useMemo(() => todos.filter((t) => {
     if (filter === "active") return !t.completed
     if (filter === "completed") return t.completed
     return true
-  })
+  }), [todos, filter])
 
   return (
     <div className="max-w-xl mx-auto px-6 py-16">
