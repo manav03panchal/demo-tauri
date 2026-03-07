@@ -11,6 +11,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  clearScreen: false,
+  server: {
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
